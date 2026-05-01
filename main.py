@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from Al import ask_ai
+from AI import ask_ai
 
 app = Flask(__name__)
 
