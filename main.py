@@ -1,34 +1,30 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, redirect, url_for
 from Al import ask_ai
-
 
 app = Flask(__name__)
 
-@app.route('/')
+# Временное хранилище истории сообщений (один общий список для всех пользователей — только для демонстрации!)
+chat_history = []
+
+@app.route('/', methods=['GET', 'POST'])
 def main():
-    # Рендерим главную страницу чата
-    return render_template('index.html')
+    global chat_history
+    if request.method == 'POST':
+        user_message = request.form.get('message', '').strip()
+        if user_message:
+            # Добавляем сообщение пользователя в историю
+            chat_history.append({'role': 'user', 'content': user_message})
+            # Получаем ответ от ИИ
+            try:
+                ai_response = ask_ai(user_message)
+                chat_history.append({'role': 'assistant', 'content': ai_response})
+            except Exception as e:
+                chat_history.append({'role': 'assistant', 'content': f'Ошибка: {str(e)}'})
+        # Редирект на GET, чтобы избежать повторной отправки при обновлении страницы
+        return redirect(url_for('main'))
 
-@app.route('/chat', methods=['POST'])
-def chat():
-    """
-    Эндпоинт для общения с ИИ.
-    Принимает JSON: {"message": "текст сообщения"}
-    Возвращает JSON: {"response": "ответ ИИ"}
-    """
-    data = request.get_json()
-    user_message = data.get('message', '')
-    if not user_message:
-        return jsonify({'error': 'Пустое сообщение'}), 400
-
-    try:
-        # Вызываем ИИ
-        ai_response = ask_ai(user_message)
-        return jsonify({'response': ai_response})
-    except Exception as e:
-        # Лучше залогировать ошибку, но пока просто вернём сообщение
-        return jsonify({'error': 'Ошибка при обращении к ИИ'}), 500
-
+    # GET-запрос — показываем страницу с историей
+    return render_template('index.html', messages=chat_history)
 
 if __name__ == '__main__':
     app.run(port=8080, host='127.0.0.1')
