@@ -25,8 +25,9 @@ def ask_ai(question):
     return response.json()["choices"][0]["message"]["content"]
 
 
-while True:
-    user_input = input("Вы: ")
-    if user_input.lower() == "!":
-        break
-    print("AI:", ask_ai(user_input))
+if __name__ == "__main__":
+    while True:
+        user_input = input("Вы: ")
+        if user_input.lower() == "!":
+            break
+        print("AI:", ask_ai(user_input))
