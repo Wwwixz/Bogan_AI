@@ -7,3 +7,6 @@ __pycache__/
 virtualenv
 venv/
 ENV/
+.idea/
+instance/
+static/style.css

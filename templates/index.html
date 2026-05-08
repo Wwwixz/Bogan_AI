@@ -7,7 +7,24 @@
             <i class="bi bi-plus-lg"></i> Новый чат
         </button>
     </form>
-    <div class="current-conversation">Текущий разговор</div>
+    <div class="current-conversation">История чатов</div>
+    <div class="chat-list">
+        {% for chat in all_chats %}
+        <form method="post" action="/" class="chat-item-form">
+            <input type="hidden" name="action" value="switch_chat">
+            <input type="hidden" name="chat_id" value="{{ chat.id }}">
+            <button type="submit" class="chat-item {% if current_chat and current_chat.id == chat.id %}active{% endif %}">
+                <i class="bi bi-chat-text"></i>
+                {% if chat.messages %}
+                    {% set first_msg = chat.messages[0] %}
+                    {{ first_msg.content[:25] }}...
+                {% else %}
+                    Новый чат
+                {% endif %}
+            </button>
+        </form>
+        {% endfor %}
+    </div>
     <div class="sidebar-footer">
         <i class="bi bi-person sidebar-footer-icon"></i>
         <span class="sidebar-footer-text">Пользователь</span>
