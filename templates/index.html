@@ -1,87 +1,185 @@
-{% extends "base.html" %} {% block title %}Чат с AI{% endblock %} {% block content %}
-<div class="sidebar">
-    <div class="sidebar-title">Чат с AI</div>
-    <form method="post" action="/">
+{% extends "base.html" %} {% block title %}Чат с Bogan AI{% endblock %} {% block content %}
+<div class="sidebar d-flex flex-column">
+    <div class="sidebar-title px-2">Bogan AI</div>
+    <form method="post" action="/" class="px-2 mb-3">
         <input type="hidden" name="action" value="new_chat">
-        <button type="submit" class="new-chat-btn">
+        <button type="submit" class="new-chat-btn d-flex align-items-center justify-content-center gap-2">
             <i class="bi bi-plus-lg"></i> Новый чат
         </button>
     </form>
-    <div class="current-conversation">История чатов</div>
-    <div class="chat-list">
+    <div class="current-conversation mx-2 mb-2">История чатов</div>
+    <div class="chat-list flex-grow-1 overflow-auto px-2">
         {% for chat in all_chats %}
-        <form method="post" action="/" class="chat-item-form">
+        <form method="post" action="/" class="chat-item-form mb-1">
             <input type="hidden" name="action" value="switch_chat">
             <input type="hidden" name="chat_id" value="{{ chat.id }}">
-            <button type="submit" class="chat-item {% if current_chat and current_chat.id == chat.id %}active{% endif %}">
+            <button type="submit" class="chat-item d-flex align-items-center gap-2 {% if current_chat and current_chat.id == chat.id %}active{% endif %}">
                 <i class="bi bi-chat-text"></i>
-                {% if chat.messages %}
-                    {% set first_msg = chat.messages[0] %}
-                    {{ first_msg.content[:25] }}...
-                {% else %}
-                    Новый чат
-                {% endif %}
+                <span class="text-truncate">
+                    {% if chat.messages %}
+                        {{ chat.messages[0].content[:25] }}...
+                    {% else %}
+                        Новый чат
+                    {% endif %}
+                </span>
             </button>
         </form>
         {% endfor %}
     </div>
-    <div class="sidebar-footer">
-        <i class="bi bi-person sidebar-footer-icon"></i>
-        <span class="sidebar-footer-text">Пользователь</span>
+    <div class="sidebar-footer border-top p-3 d-flex align-items-center justify-content-between mt-auto">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-person sidebar-footer-icon fs-4"></i>
+            <span class="sidebar-footer-text">{{ current_user.username }}</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="text-danger" title="Выйти">
+            <i class="bi bi-box-arrow-right fs-5"></i>
+        </a>
     </div>
 </div>
 
-<div class="main-content">
-    <div class="chat-header">
-        <div class="chat-header-avatar">
-            <i class="bi bi-robot"></i>
+<div class="main-content d-flex flex-column">
+    <div class="chat-header d-flex align-items-center gap-3 p-4 border-bottom bg-white">
+        <div class="chat-header-avatar d-flex align-items-center justify-content-center">
+            <i class="bi bi-cpu-fill"></i>
         </div>
         <div class="chat-header-info">
-            <h2>AI Ассистент</h2>
+            <h2 class="h6 mb-0 fw-bold">Bogan AI</h2>
         </div>
     </div>
 
-    <div class="chat-container" id="chat-box">
-        <div class="welcome-message">
-            <h1>Привет! Я AI-ассистент. Чем могу помочь?</h1>
+    <div class="chat-container flex-grow-1 overflow-auto p-4 d-flex flex-column gap-4" id="chat-box">
+        {% if not messages %}
+        <div class="welcome-message text-center my-auto">
+            <h1 class="h4 fw-light">Привет, {{ current_user.username }}!</h1>
+            <p class="text-muted">Я ваш цифровой помощник. Чем могу помочь?</p>
         </div>
-        {% for msg in messages %}
-        <div class="message-wrapper {{ msg.role }}">
-            <div class="message-avatar">
+        {% endif %} {% for msg in messages %}
+        <div class="message-wrapper d-flex gap-3 {{ msg.role }} {% if msg.role == 'user' %}justify-content-end{% endif %}">
+            <div class="message-avatar d-flex align-items-center justify-content-center flex-shrink-0">
                 {% if msg.role == 'assistant' %}
-                <i class="bi bi-robot"></i> {% else %}
-                <i class="bi bi-person"></i> {% endif %}
+                <i class="bi bi-cpu-fill"></i> {% else %}
+                <i class="bi bi-person-circle"></i> {% endif %}
             </div>
-            <div class="message-bubble">
+            <div class="message-bubble shadow-sm">
                 {{ msg.content }}
             </div>
         </div>
         {% endfor %}
     </div>
 
-    <div class="input-wrapper">
-        <div class="input-container">
-            <form method="post" action="/" class="input-field-wrapper">
-                <input type="text" name="message" class="input-field" placeholder="Отправить сообщение..." autocomplete="off" required>
-                <button type="submit" class="send-btn">
-                    <i class="bi bi-send-fill"></i>
+    <div class="input-wrapper p-4 border-top bg-white">
+        <div class="input-container mx-auto" style="max-width: 800px;">
+            <form id="chat-form" class="input-field-wrapper position-relative d-flex align-items-center gap-2">
+                <div class="flex-grow-1 position-relative">
+                    <input type="text" id="message-input" name="message" class="input-field w-100 py-3 px-4 border rounded-4 shadow-sm" placeholder="Напишите сообщение ассистенту..." autocomplete="off">
+                </div>
+                <button type="submit" class="btn btn-primary p-3 rounded-4 shadow-sm d-flex align-items-center justify-content-center" style="width: 54px; height: 54px;">
+                    <i class="bi bi-arrow-up-circle-fill fs-5"></i>
                 </button>
             </form>
-            <div class="disclaimer">
+            <div class="disclaimer text-center mt-2 small text-muted">
                 AI может делать ошибки. Проверяйте важную информацию.
             </div>
         </div>
     </div>
 </div>
 
-<button class="help-btn">
+<button class="help-btn position-fixed bottom-0 end-0 m-4 d-flex align-items-center justify-content-center shadow-sm">
     <i class="bi bi-question-circle"></i>
 </button>
 
 <script>
     const chatBox = document.getElementById('chat-box');
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+
     if (chatBox) {
         chatBox.scrollTop = chatBox.scrollHeight;
     }
+
+    function appendMessage(role, content) {
+        const wrapper = document.createElement('div');
+        wrapper.className = `message-wrapper d-flex gap-3 ${role} ${role === 'user' ? 'justify-content-end' : ''}`;
+
+        const avatar = document.createElement('div');
+        avatar.className = 'message-avatar d-flex align-items-center justify-content-center flex-shrink-0';
+        avatar.innerHTML = role === 'assistant' ? '<i class="bi bi-cpu-fill"></i>' : '<i class="bi bi-person-circle"></i>';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble shadow-sm';
+        bubble.textContent = content;
+
+        if (role === 'user') {
+            wrapper.appendChild(bubble);
+            wrapper.appendChild(avatar);
+        } else {
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(bubble);
+        }
+
+        chatBox.appendChild(wrapper);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        const welcome = document.querySelector('.welcome-message');
+        if (welcome) welcome.remove();
+    }
+
+    function showTyping() {
+        const typing = document.createElement('div');
+        typing.id = 'typing-indicator';
+        typing.className = 'message-wrapper d-flex gap-3 assistant';
+        typing.innerHTML = `
+            <div class="message-avatar d-flex align-items-center justify-content-center flex-shrink-0">
+                <i class="bi bi-cpu-fill"></i>
+            </div>
+            <div class="message-bubble shadow-sm text-muted">
+                <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+                ИИ печатает...
+            </div>
+        `;
+        chatBox.appendChild(typing);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function removeTyping() {
+        const typing = document.getElementById('typing-indicator');
+        if (typing) typing.remove();
+    }
+
+    chatForm.addEventListener('submit', async(e) => {
+        e.preventDefault();
+        const message = messageInput.value.trim();
+
+        if (!message) return;
+
+        appendMessage('user', message);
+        messageInput.value = '';
+
+        showTyping();
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message
+                })
+            });
+
+            const data = await response.json();
+            removeTyping();
+
+            if (data.status === 'success') {
+                appendMessage('assistant', data.ai_response);
+            } else {
+                appendMessage('assistant', 'Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+            }
+        } catch (error) {
+            removeTyping();
+            appendMessage('assistant', 'Ошибка сети: ' + error.message);
+        }
+    });
 </script>
 {% endblock %}
