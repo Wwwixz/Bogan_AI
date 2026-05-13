@@ -2,9 +2,21 @@ from flask import Flask, render_template, request, redirect, url_for
 from AI import ask_ai
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+import os
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chats.db'
+
+# Настройка базы данных PostgreSQL (через переменную окружения Heroku)
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    # Heroku передаёт postgres://, а SQLAlchemy требует postgresql://
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    # Fallback для локальной разработки (SQLite только локально!)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chats.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -97,8 +109,11 @@ def main():
     
     return render_template('index.html', messages=messages, all_chats=all_chats, current_chat=current_chat)
 
+# Создание таблиц (если их нет)
 with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    app.run(port=8086, host='127.0.0.1', debug=False)
+    # Для локального запуска
+    port = int(os.environ.get("PORT", 8086))
+    app.run(host='0.0.0.0', port=port, debug=False)
